@@ -1,6 +1,6 @@
 require "cox"
 require "base64"
-require "./encryptor"
+require "../shared/*"
 
 class EncryptedTcp::ConnectionException < Exception
 end

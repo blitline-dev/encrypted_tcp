@@ -1,5 +1,6 @@
 require "socket"
 require "./action_handler"
+require "../shared/*"
 
 # --------------------------------------
 #
@@ -22,10 +23,16 @@ require "./action_handler"
 class EncryptedTcp::TcpListener
   TOTAL_FIBERS = 200
 
-  def initialize(@host : String, @port : Int32, @action : ActionHandler, @debug : Bool)
+  def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String), @debug : Bool)
     @connections = 0
     @version = ENV["VERSION"]? || "0.0"
     @total_invokations = 0
+
+    server_secret_key = config["server_secret_key"]
+    server_public_key = config["server_public_key"]
+    client_public_key = config["client_public_key"]
+    @encryptor = EncryptedTcp::Encryptor.new(server_secret_key, server_public_key, client_public_key)
+
     set_trap
   end
 
@@ -92,7 +99,6 @@ class EncryptedTcp::TcpListener
     get_socket_data(socket) do |lines|
       if lines
         lines.each_line do |data|
-          puts data
           @total_invokations += 1
           if data.to_s[0..4] == "stats"
             stats_response(socket)
@@ -112,7 +118,7 @@ class EncryptedTcp::TcpListener
               # accessible.
               # --------------------------------
               return unless data.valid_encoding?
-              @action.process(socket, data)
+              @action.process(socket, @encryptor, data)
             rescue ex
               puts ex.inspect_with_backtrace
               puts "Data:#{data}"

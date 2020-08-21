@@ -1,3 +1,5 @@
+require "./shared/*"
+require "./client/*"
 require "./tcp_engine/*"
 require "cox"
 require "base64"

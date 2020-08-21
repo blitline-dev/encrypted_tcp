@@ -1,4 +1,6 @@
+require "./shared/*"
 require "./tcp_engine/*"
+require "./client/*"
 
 class SampleClient
   VERSION = "0.1.0"
@@ -11,7 +13,7 @@ class SampleClient
     connection = EncryptedTcp::Connection.new("127.0.0.1", server_port, client_private_key, client_public_key, server_public_key)
     1.upto(100) do
       if connection
-        response = connection.send(("Jason" * 1024))
+        response = connection.send(("Jason" * 102))
         puts response
       end
     end
