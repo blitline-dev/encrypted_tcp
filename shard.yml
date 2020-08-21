@@ -2,8 +2,15 @@ name: encrypted_tcp
 version: 0.1.0
 
 authors:
-  - your-name-here <your-email-here>
+  - Jason Malcolm jason@blitline.com
+
+description: |
+  Simple Encrypted TCP engine
 
 crystal: 0.35.1
+
+dependencies:
+  cox:
+    github: andrewhamon/cox
 
 license: MIT
