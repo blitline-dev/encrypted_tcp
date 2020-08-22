@@ -20,6 +20,10 @@ class EncryptedTcp::Connection
     @client = TCPSocket.new(@host, @port.to_i)
   end
 
+  def close
+    @client.close
+  end
+
   def retry(encrypted_data)
     1.upto(5) do
       sleep(1)
