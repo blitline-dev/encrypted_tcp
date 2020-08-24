@@ -9,9 +9,27 @@ class EncryptedTcp::EncryptionException < Exception
 end
 
 class EncryptedTcp::Connection
+  ETCP_HEARTBEAT = (ENV["ETCP_HEARTBEAT"]? || "15").to_i
+
   def initialize(@host : String, @port : String, client_secret_key : String, client_public_key : String, server_public_key : String)
     @client = TCPSocket.new(@host, @port.to_i)
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
+    start_heartbeat
+    @debug = ENV["DEBUG"]?.to_s == "true"
+  end
+
+  def start_heartbeat
+    spawn do
+      loop do
+        begin
+          sleep ETCP_HEARTBEAT
+          alive?
+        rescue ex
+          puts "Exception in heartbeat" if @debug
+          puts ex.inspect_with_backtrace
+        end
+      end
+    end
   end
 
   def build_tcp_connection
@@ -40,18 +58,32 @@ class EncryptedTcp::Connection
 
   def alive?
     begin
-      return false if @client.closed?
-      @client << "PING\n"
-      resp = @client.gets
-      return true if resp == "PONG"
+      if @client.closed?
+        build_tcp_connection
+      end
+      response = send("PING", false)
+      return true if response == "PONG"
     rescue ex
-      puts "Alive? Failed"
-      puts ex.inspect_with_backtrace
+      sleep(1)
+      return true if once_alive?
+      build_tcp_connection
+      puts ex.inspect_with_backtrace if @debug
     end
     return false
   end
 
-  def send(data)
+  def once_alive?
+    begin
+      response = send("PING", false)
+      return true if response == "PONG"
+    rescue ex
+      build_tcp_connection
+      puts ex.inspect_with_backtrace if @debug
+    end
+    return false
+  end
+
+  def send(data, allow_retry = true)
     send_data = ""
     begin
       send_data = @encryptor.encrypt(data)
@@ -59,10 +91,13 @@ class EncryptedTcp::Connection
       response_data = @encryptor.decrypt(response)
       return response_data
     rescue ce : EncryptedTcp::ConnectionException
-      retry(send_data)
+      puts ce.inspect_with_backtrace
+      retry(send_data) if allow_retry
     rescue ex : Exception
-      raise EncryptedTcp::EncryptionException.new(ex.message)
+      puts ex.inspect_with_backtrace if @debug
+      retry(send_data) if allow_retry
     end
+    build_tcp_connection
   end
 
   def raw_send(send_data)
@@ -72,8 +107,8 @@ class EncryptedTcp::Connection
       sent = true
       response = @client.gets
     rescue ex
-      puts sent ? "Getting Response Failed" : "Sending Failed"
-      puts ex.inspect_with_backtrace
+      puts sent ? "Getting Response Failed" : "Sending Failed" if @debug
+      puts ex.inspect_with_backtrace if @debug
       raise EncryptedTcp::ConnectionException.new(sent ? "Getting TCP Response Failed" : "Sending TCP Failed")
     end
   end

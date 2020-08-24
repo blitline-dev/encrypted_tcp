@@ -23,7 +23,7 @@ require "../shared/*"
 class EncryptedTcp::TcpListener
   TOTAL_FIBERS = 200
 
-  def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String), @debug : Bool)
+  def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String))
     @connections = 0
     @version = ENV["VERSION"]? || "0.0"
     @total_invokations = 0
@@ -32,7 +32,8 @@ class EncryptedTcp::TcpListener
     server_public_key = config["server_public_key"]
     client_public_key = config["client_public_key"]
     @encryptor = EncryptedTcp::Encryptor.new(server_secret_key, server_public_key, client_public_key)
-
+    @debug = true
+    @debug = ENV["DEBUG"]?.to_s == "true" if ENV["DEBUG"]?
     set_trap
   end
 
@@ -51,8 +52,10 @@ class EncryptedTcp::TcpListener
         ch.send socket
       end
     rescue ex
-      puts "Error in tcp:loop!"
-      puts ex.message
+      if @debug
+        puts "Error in tcp:loop!"
+        puts ex.message
+      end
     end
   end
 
@@ -62,7 +65,7 @@ class EncryptedTcp::TcpListener
         loop do
           begin
             socket = socket_channel.receive
-            socket.read_timeout = 15
+            socket.read_timeout = 20
             @connections += 1
             reader(socket)
             socket.close
@@ -73,8 +76,10 @@ class EncryptedTcp::TcpListener
               socket.close
             end
             @connections -= 1
-            puts "Error in spawn_listener"
-            puts ex.message
+            if @debug
+              puts "Error in spawn_listener"
+              puts ex.message
+            end
           end
         end
       end

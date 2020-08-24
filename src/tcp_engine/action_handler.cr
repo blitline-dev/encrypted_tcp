@@ -11,6 +11,7 @@ require "json"
 # ---------------------------------------
 abstract class EncryptedTcp::ActionHandler
   def initialize
+    @pingable = true
     @debug = false
     @debug = ENV["DEBUG"]?.to_s == "1"
   end
@@ -18,8 +19,21 @@ abstract class EncryptedTcp::ActionHandler
   # For example purposes, just output data
   def process(socket : Socket, encryptor : EncryptedTcp::Encryptor, data : String)
     received_data = encryptor.decrypt(data)
+    return if check_ping(received_data, socket, encryptor)
     response = handle(received_data)
     socket.puts(encryptor.encrypt(response))
+  end
+
+  def check_ping(data, socket, encryptor)
+    if data.to_s[0..4] == "PING"
+      pong_response(socket, encryptor)
+      return true
+    end
+    false
+  end
+
+  def pong_response(socket : TCPSocket, encryptor)
+    socket.puts(encryptor.encrypt("PONG"))
   end
 
   # Handle is the single logic point of an action
