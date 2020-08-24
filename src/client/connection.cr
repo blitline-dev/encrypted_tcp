@@ -12,6 +12,7 @@ class EncryptedTcp::Connection
   ETCP_HEARTBEAT = (ENV["ETCP_HEARTBEAT"]? || "15").to_i
 
   def initialize(@host : String, @port : String, client_secret_key : String, client_public_key : String, server_public_key : String)
+    @debug = false
     @client = TCPSocket.new(@host, @port.to_i)
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
     start_heartbeat

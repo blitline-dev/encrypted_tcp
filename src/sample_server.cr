@@ -29,7 +29,7 @@ class SampleServer
     }
 
     action = SampleAction.new
-    server = EncryptedTcp::TcpListener.new(listen, port.to_i, action, config, debug)
+    server = EncryptedTcp::TcpListener.new(listen, port.to_i, action, config)
     server.listen
   end
 end
