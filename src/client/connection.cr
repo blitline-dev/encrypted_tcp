@@ -11,7 +11,6 @@ end
 class EncryptedTcp::Connection
   def initialize(@host : String, @port : String, client_secret_key : String, client_public_key : String, server_public_key : String)
     @client = TCPSocket.new(@host, @port.to_i)
-    puts "Create Client on #{@host}:#{port}"
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
   end
 
@@ -62,7 +61,7 @@ class EncryptedTcp::Connection
     rescue ce : EncryptedTcp::ConnectionException
       retry(send_data)
     rescue ex : Exception
-      EncryptedTcp::EncryptionException.new(ex.message)
+      raise EncryptedTcp::EncryptionException.new(ex.message)
     end
   end
 
