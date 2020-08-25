@@ -32,7 +32,7 @@ class EncryptedTcp::TcpListener
     server_public_key = config["server_public_key"]
     client_public_key = config["client_public_key"]
     @encryptor = EncryptedTcp::Encryptor.new(server_secret_key, server_public_key, client_public_key)
-    @debug = true
+    @debug = false
     @debug = ENV["DEBUG"]?.to_s == "true" if ENV["DEBUG"]?
     set_trap
   end
