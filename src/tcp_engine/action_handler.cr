@@ -11,9 +11,6 @@ require "json"
 # ---------------------------------------
 abstract class EncryptedTcp::ActionHandler
   def initialize
-    @pingable = true
-    @debug = false
-    @debug = ENV["DEBUG"]?.to_s == "1"
   end
 
   # For example purposes, just output data
