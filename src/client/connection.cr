@@ -90,6 +90,7 @@ class EncryptedTcp::Connection
 
   def send(data, allow_retry = true)
     send_data = ""
+    response_data = ""
     begin
       send_data = @encryptor.encrypt(data)
       response = raw_send(send_data)
@@ -97,12 +98,12 @@ class EncryptedTcp::Connection
       return response_data
     rescue ce : EncryptedTcp::ConnectionException
       puts "Excryption Exception with data #{data}"
-      retry(send_data) if allow_retry
+      response_data = retry(send_data) if allow_retry
     rescue ex : Exception
       puts "Regular Exception with data #{data}" if @debug
-      retry(send_data) if allow_retry
+      response_data = retry(send_data) if allow_retry
     end
-    build_tcp_connection
+    response_data
   end
 
   def raw_send(send_data)
