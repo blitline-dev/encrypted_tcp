@@ -56,6 +56,7 @@ class EncryptedTcp::Connection
       else
         build_tcp_connection
       end
+      puts "Retrying"
     end
     puts "Retries Failed"
     raise EncryptedTcp::ConnectionException.new("Couldn't send data to server. No Connection")
@@ -98,21 +99,24 @@ class EncryptedTcp::Connection
     return false
   end
 
-  def send(data, allow_retry = true)
+  def send(data)
     send_data = ""
     response_data = ""
     begin
       send_data = @encryptor.encrypt(data)
       response = raw_send(send_data)
       response_data = @encryptor.decrypt(response)
-      puts "Empty response?! Weird:" if response_data.nil? || response_data.empty?
+      if response_data.nil? || response_data.empty?
+        puts "Empty response?! Weird:"
+        response_data = retry(send_data)
+      end
       return response_data
     rescue ce : EncryptedTcp::ConnectionException
       puts "Excryption Exception with data #{data}"
-      response_data = retry(send_data) if allow_retry
+      response_data = retry(send_data)
     rescue ex : Exception
       puts "Regular Exception with data #{data}" if @debug
-      response_data = retry(send_data) if allow_retry
+      response_data = retry(send_data)
     end
 
     response_data
