@@ -92,9 +92,11 @@ class EncryptedTcp::Connection
       response_data = @encryptor.decrypt(response)
       return response_data
     rescue ce : EncryptedTcp::ConnectionException
+      puts "Excryption Exception with data #{data}"
       puts ce.inspect_with_backtrace
       retry(send_data) if allow_retry
     rescue ex : Exception
+      puts "Regular Exception with data #{data}" if @debug
       puts ex.inspect_with_backtrace if @debug
       retry(send_data) if allow_retry
     end
