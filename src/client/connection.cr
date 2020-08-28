@@ -45,7 +45,7 @@ class EncryptedTcp::Connection
   def retry(encrypted_data)
     1.upto(5) do
       sleep(1)
-      if alive?
+      if once_alive?
         response = raw_send(encrypted_data)
         response_data = @encryptor.decrypt(response)
         return response_data
@@ -62,12 +62,15 @@ class EncryptedTcp::Connection
       if @client.closed?
         build_tcp_connection
       end
+      is_ok = false
+      puts "RETRYING" if @debug
       response = send("PING", false)
-      return true if response == "PONG"
+      is_ok = (response == "PONG")
+      puts "OK RETRYING" if is_ok
+      return is_ok
     rescue ex
       sleep(1)
       return true if once_alive?
-      build_tcp_connection
       puts ex.inspect_with_backtrace if @debug
     end
     return false
@@ -75,11 +78,12 @@ class EncryptedTcp::Connection
 
   def once_alive?
     begin
+      build_tcp_connection
       response = send("PING", false)
       return true if response == "PONG"
     rescue ex
       build_tcp_connection
-      puts ex.inspect_with_backtrace if @debug
+      puts "Failed once_alive?" if @debug
     end
     return false
   end
@@ -93,11 +97,9 @@ class EncryptedTcp::Connection
       return response_data
     rescue ce : EncryptedTcp::ConnectionException
       puts "Excryption Exception with data #{data}"
-      puts ce.inspect_with_backtrace
       retry(send_data) if allow_retry
     rescue ex : Exception
       puts "Regular Exception with data #{data}" if @debug
-      puts ex.inspect_with_backtrace if @debug
       retry(send_data) if allow_retry
     end
     build_tcp_connection
