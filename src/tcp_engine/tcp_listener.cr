@@ -14,14 +14,9 @@ require "../shared/*"
 # between short lived TCP connections and large
 # data bursts over a TCP socket.
 #
-# This example DOES NOT try to be a long-lived
-# TCP connection for websocket-like behavior.
-# The assumption for this is many short-lived or
-# high data connections.
-#
 # --------------------------------------
 class EncryptedTcp::TcpListener
-  TOTAL_FIBERS = 200
+  TOTAL_FIBERS = 2500
 
   def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String))
     @connections = 0
@@ -68,7 +63,6 @@ class EncryptedTcp::TcpListener
             socket.read_timeout = 20
             @connections += 1
             reader(socket)
-            socket.close
             @total_invokations += 1
             @connections -= 1
           rescue ex
