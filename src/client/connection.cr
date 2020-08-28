@@ -48,12 +48,16 @@ class EncryptedTcp::Connection
       if once_alive?
         response = raw_send(encrypted_data)
         response_data = @encryptor.decrypt(response)
-        return response_data
+        if response_data && !response_data.empty?
+          return response_data
+        else
+          build_tcp_connection
+        end
       else
-        @client.close
         build_tcp_connection
       end
     end
+    puts "Retries Failed"
     raise EncryptedTcp::ConnectionException.new("Couldn't send data to server. No Connection")
   end
 
@@ -62,12 +66,7 @@ class EncryptedTcp::Connection
       if @client.closed?
         build_tcp_connection
       end
-      is_ok = false
-      puts "RETRYING" if @debug
-      response = send("PING", false)
-      is_ok = (response == "PONG")
-      puts "OK RETRYING" if is_ok
-      return is_ok
+      return ping?
     rescue ex
       sleep(1)
       return true if once_alive?
@@ -76,11 +75,22 @@ class EncryptedTcp::Connection
     return false
   end
 
+  def ping?
+    is_ok = false
+    begin
+      send_data = @encryptor.encrypt("PING")
+      response = raw_send(send_data)
+      response_data = @encryptor.decrypt(response)
+      is_ok = (response == "PONG")
+    rescue ex
+      puts "Failed PING"
+    end
+    return is_ok
+  end
+
   def once_alive?
     begin
-      build_tcp_connection
-      response = send("PING", false)
-      return true if response == "PONG"
+      return ping?
     rescue ex
       build_tcp_connection
       puts "Failed once_alive?" if @debug
@@ -95,6 +105,7 @@ class EncryptedTcp::Connection
       send_data = @encryptor.encrypt(data)
       response = raw_send(send_data)
       response_data = @encryptor.decrypt(response)
+      puts "Empty response?! Weird:" if response_data.nil? || response_data.empty?
       return response_data
     rescue ce : EncryptedTcp::ConnectionException
       puts "Excryption Exception with data #{data}"
@@ -103,6 +114,7 @@ class EncryptedTcp::Connection
       puts "Regular Exception with data #{data}" if @debug
       response_data = retry(send_data) if allow_retry
     end
+
     response_data
   end
 
