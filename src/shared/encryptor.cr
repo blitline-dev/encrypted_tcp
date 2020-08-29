@@ -3,9 +3,9 @@ require "base64"
 
 class EncryptedTcp::Encryptor
   def initialize(local_secret_key : String, local_public_key : String, remote_public_key : String)
-    @local_secret_key = Cox::SecretKey.new(Base64.decode_string(local_secret_key.strip))
-    @local_public_key = Cox::PublicKey.new(Base64.decode_string(local_public_key.strip))
-    @remote_public_key = Cox::PublicKey.new(Base64.decode_string(remote_public_key.strip))
+    @local_secret_key = Cox::SecretKey.new(Base64.decode(local_secret_key.strip))
+    @local_public_key = Cox::PublicKey.new(Base64.decode(local_public_key.strip))
+    @remote_public_key = Cox::PublicKey.new(Base64.decode(remote_public_key.strip))
   end
 
   def self.generate_keypair
@@ -22,7 +22,7 @@ class EncryptedTcp::Encryptor
     if data
       puts "Data IN", data
       nonce, raw = data.split(":")
-      decrypted = Cox.decrypt(Base64.decode_string(raw), Cox::Nonce.new(Base64.decode_string(nonce)), @remote_public_key, @local_secret_key)
+      decrypted = Cox.decrypt(Base64.decode(raw), Cox::Nonce.new(Base64.decode(nonce)), @remote_public_key, @local_secret_key)
       String.new(decrypted)
     end
   end
