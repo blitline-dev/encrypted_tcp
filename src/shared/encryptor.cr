@@ -20,7 +20,6 @@ class EncryptedTcp::Encryptor
 
   def decrypt(data)
     if data
-      puts "Data IN", data
       nonce, raw = data.split(":")
       decrypted = Cox.decrypt(Base64.decode(raw), Cox::Nonce.new(Base64.decode(nonce)), @remote_public_key, @local_secret_key)
       String.new(decrypted)
