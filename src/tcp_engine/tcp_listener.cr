@@ -101,15 +101,6 @@ class EncryptedTcp::TcpListener
       if lines
         lines.each_line do |data|
           @total_invokations += 1
-          if data.to_s[0..4] == "stats"
-            stats_response(socket)
-            return
-          end
-          if data.to_s[0..4] == "PING"
-            pong_response(socket)
-            return
-          end
-
           puts "Recieved: #{data}" if @debug
 
           if data && data.size > 5
@@ -141,10 +132,6 @@ class EncryptedTcp::TcpListener
       "total_invokations" => @total_invokations,
     }
     socket.puts(data.to_json)
-  end
-
-  def pong_response(socket : TCPSocket)
-    socket.puts("PONG")
   end
 
   # ------------------------------------
