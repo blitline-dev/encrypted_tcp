@@ -11,6 +11,7 @@ require "json"
 # ---------------------------------------
 abstract class EncryptedTcp::ActionHandler
   def initialize
+    @mutex = Mutex.new
   end
 
   # For example purposes, just output data
@@ -18,7 +19,7 @@ abstract class EncryptedTcp::ActionHandler
     received_data = encryptor.decrypt(data)
     return if check_ping(received_data, socket, encryptor)
     response = handle(received_data)
-    socket.puts(encryptor.encrypt(response))
+    socket.locked_puts(encryptor.encrypt(response))
   end
 
   def check_ping(data, socket, encryptor)
@@ -30,7 +31,14 @@ abstract class EncryptedTcp::ActionHandler
   end
 
   def pong_response(socket : TCPSocket, encryptor)
-    socket.puts(encryptor.encrypt("PONG"))
+    socket.locked_puts(encryptor.encrypt("PONG"))
+  end
+
+  def locked_puts(data)
+    @mutex.synchronize do
+      socket.puts(data.to_s)
+      socket.flush
+    end
   end
 
   # Handle is the single logic point of an action
