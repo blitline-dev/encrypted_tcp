@@ -23,7 +23,7 @@ abstract class EncryptedTcp::ActionHandler
     received_data = encryptor.decrypt(data)
     return if check_ping(received_data, socket, encryptor)
     response = handle(received_data)
-    locked_puts(socket, encryptor.encrypt(response))
+    return locked_puts(socket, encryptor.encrypt(response))
   end
 
   def check_ping(data, socket, encryptor)
@@ -35,16 +35,15 @@ abstract class EncryptedTcp::ActionHandler
   end
 
   def pong_response(socket : TCPSocket, encryptor)
-    locked_puts(socket, encryptor.encrypt("PONG"))
+    return locked_puts(socket, encryptor.encrypt("PONG"))
   end
 
   def locked_puts(socket, data)
-    unless mutex.nil?
-      mutex.synchronize do
-        socket.puts(data.to_s)
-        socket.flush
-      end
+    output = ""
+    mutex.synchronize do
+      output = socket.puts(data.to_s)
     end
+    output
   end
 
   # Handle is the single logic point of an action

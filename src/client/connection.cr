@@ -35,6 +35,8 @@ class EncryptedTcp::Connection
   def build_tcp_connection
     @client.close
     @client = TCPSocket.new(@host, @port.to_i)
+    @client.flush_on_newline = true
+    @client.sync = true
   end
 
   def close
