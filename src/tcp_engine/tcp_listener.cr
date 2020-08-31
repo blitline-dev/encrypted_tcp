@@ -103,7 +103,7 @@ class EncryptedTcp::TcpListener
           @total_invokations += 1
           puts "Recieved: #{data}" if @debug
 
-          if data && data.size > 5
+          if data && data.size > 2
             begin
               # --------------------------------
               # Ignore random data. You WILL get this if publicly
