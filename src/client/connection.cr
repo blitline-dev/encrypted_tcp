@@ -1,4 +1,3 @@
-require "cox"
 require "base64"
 require "../shared/*"
 

@@ -13,7 +13,7 @@ class EncryptedTcp::Encryptor
   end
 
   def encrypt(data)
-    return Base64.urlsafe_encode(data.to_s)
+    return data
     # Encrypt a message for Bob using his public key, signing it with Alice's
     #   nonce, encrypted = Cox.encrypt(data, @remote_public_key, @local_secret_key)
 
@@ -21,7 +21,7 @@ class EncryptedTcp::Encryptor
   end
 
   def decrypt(data)
-    return Base64.decode_string(data.to_s)
+    return data
     # if data
     #   nonce, raw = data.split(":")
     #   decrypted = Cox.decrypt(Base64.decode(raw), Cox::Nonce.new(Base64.decode(nonce)), @remote_public_key, @local_secret_key)
