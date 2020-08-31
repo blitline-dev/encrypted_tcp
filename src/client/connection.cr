@@ -18,6 +18,11 @@ class EncryptedTcp::Connection
     @debug = ENV["DEBUG"]?.to_s == "true"
   end
 
+  def mutex : Mutex
+    @mutex = Mutex.new unless @mutex
+    return @mutex.not_nil!
+  end
+
   def start_heartbeat
     spawn do
       loop do
@@ -126,9 +131,13 @@ class EncryptedTcp::Connection
   def raw_send(send_data)
     sent = false
     begin
-      @client << "#{send_data}\n"
-      sent = true
-      response = @client.gets
+      response = ""
+      mutex.synchronize do
+        @client.puts send_data
+        sent = true
+        response = @client.gets
+      end
+      response
     rescue ex
       puts sent ? "Getting Response Failed" : "Sending Failed" if @debug
       puts ex.inspect_with_backtrace if @debug
