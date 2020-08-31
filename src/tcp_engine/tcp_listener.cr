@@ -60,6 +60,8 @@ class EncryptedTcp::TcpListener
         loop do
           begin
             socket = socket_channel.receive
+            socket.flush_on_newline = true
+            socket.sync = true
             socket.read_timeout = 20
             @connections += 1
             reader(socket)
