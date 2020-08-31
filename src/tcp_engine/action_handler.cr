@@ -11,7 +11,11 @@ require "json"
 # ---------------------------------------
 abstract class EncryptedTcp::ActionHandler
   def initialize
-    @mutex = Mutex.new
+  end
+
+  def mutex
+    @mutex = Mutex.new unless @mutex
+    return @mutex
   end
 
   # For example purposes, just output data
@@ -35,7 +39,7 @@ abstract class EncryptedTcp::ActionHandler
   end
 
   def locked_puts(data)
-    @mutex.synchronize do
+    mutex.synchronize do
       socket.puts(data.to_s)
       socket.flush
     end
