@@ -13,9 +13,9 @@ abstract class EncryptedTcp::ActionHandler
   def initialize
   end
 
-  def mutex
+  def mutex : Mutex
     @mutex = Mutex.new unless @mutex
-    return @mutex
+    return @mutex.not_nil!
   end
 
   # For example purposes, just output data
@@ -23,7 +23,7 @@ abstract class EncryptedTcp::ActionHandler
     received_data = encryptor.decrypt(data)
     return if check_ping(received_data, socket, encryptor)
     response = handle(received_data)
-    socket.locked_puts(encryptor.encrypt(response))
+    locked_puts(socket, encryptor.encrypt(response))
   end
 
   def check_ping(data, socket, encryptor)
@@ -35,13 +35,15 @@ abstract class EncryptedTcp::ActionHandler
   end
 
   def pong_response(socket : TCPSocket, encryptor)
-    socket.locked_puts(encryptor.encrypt("PONG"))
+    locked_puts(socket, encryptor.encrypt("PONG"))
   end
 
-  def locked_puts(data)
-    mutex.synchronize do
-      socket.puts(data.to_s)
-      socket.flush
+  def locked_puts(socket, data)
+    unless mutex.nil?
+      mutex.synchronize do
+        socket.puts(data.to_s)
+        socket.flush
+      end
     end
   end
 
