@@ -42,6 +42,7 @@ class EncryptedTcp::Connection
     @client = TCPSocket.new(@host, @port.to_i)
     @client.flush_on_newline = true
     @client.sync = true
+    sleep 1
   end
 
   def close
@@ -141,6 +142,7 @@ class EncryptedTcp::Connection
     rescue ex
       puts sent ? "Getting Response Failed" : "Sending Failed" if @debug
       puts ex.inspect_with_backtrace if @debug
+      build_tcp_connection
       raise EncryptedTcp::ConnectionException.new(sent ? "Getting TCP Response Failed" : "Sending TCP Failed")
     end
   end
