@@ -16,7 +16,7 @@ require "../shared/*"
 #
 # --------------------------------------
 class EncryptedTcp::TcpListener
-  TOTAL_FIBERS = 2500
+  TOTAL_FIBERS = 1200
 
   def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String))
     @connections = 0
@@ -65,6 +65,7 @@ class EncryptedTcp::TcpListener
             socket.read_timeout = 20
             @connections += 1
             reader(socket)
+            socket.close
             @total_invokations += 1
             @connections -= 1
           rescue ex

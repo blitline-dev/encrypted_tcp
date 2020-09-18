@@ -122,7 +122,7 @@ class EncryptedTcp::Connection
       puts "Excryption Exception with data #{data}"
       response_data = retry(send_data)
     rescue ex : Exception
-      puts "Regular Exception with data #{data}" if @debug
+      puts "Regular Exception with data #{data}"
       response_data = retry(send_data)
     end
 
@@ -140,8 +140,8 @@ class EncryptedTcp::Connection
       end
       response
     rescue ex
-      puts sent ? "Getting Response Failed" : "Sending Failed" if @debug
-      puts ex.inspect_with_backtrace if @debug
+      puts sent ? "Getting Response Failed" : "Sending Failed"
+      puts ex.inspect_with_backtrace
       build_tcp_connection
       raise EncryptedTcp::ConnectionException.new(sent ? "Getting TCP Response Failed" : "Sending TCP Failed")
     end
