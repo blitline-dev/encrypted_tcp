@@ -61,10 +61,6 @@ class EncryptedTcp::TcpListener
           begin
             socket = socket_channel.receive
             socket.flush_on_newline = true
-            socket.tcp_keepalive_idle = 300
-            socket.tcp_keepalive_idle = 300
-            socket.tcp_keepalive_interval = 1
-            socket.tcp_keepalive_count = 2
             socket.sync = true
             socket.read_timeout = 20
             @connections += 1
@@ -105,7 +101,7 @@ class EncryptedTcp::TcpListener
       if lines
         lines.each_line do |data|
           @total_invokations += 1
-          puts "Recieved: #{data}" if @debug
+          puts "RecievedX: #{data}" if @debug
 
           if data && data.size > 2
             begin
