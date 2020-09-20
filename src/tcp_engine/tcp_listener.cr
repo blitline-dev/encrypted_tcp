@@ -65,6 +65,7 @@ class EncryptedTcp::TcpListener
             socket.flush_on_newline = true
             socket.sync = true
             socket.read_timeout = 20
+            socket.tcp_nodelay = true
             @connections += 1
             reader(socket)
             @total_invokations += 1
