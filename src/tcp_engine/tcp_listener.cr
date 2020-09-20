@@ -44,7 +44,7 @@ class EncryptedTcp::TcpListener
     begin
       loop do
         socket = server.accept
-        ch.send socket
+        spawn reader(socket)
       end
     rescue ex
       if @debug
