@@ -87,14 +87,9 @@ class EncryptedTcp::TcpListener
 
   def get_socket_data(socket : TCPSocket)
     begin
-      i = 0
-      socket.each_line do |line|
-        i += 1
-        i = 0 if i > 900000
-        puts line.to_s if @debug
-        puts "i = #{i}" if @debug_light && i % 10 == 0
-        yield(line)
-      end
+      line = socket.gets(true)
+      puts line.to_s if @debug
+      yield(line)
     rescue ex
       if @debug
         puts "From Socket Address:" + socket.remote_address.to_s if socket.remote_address
