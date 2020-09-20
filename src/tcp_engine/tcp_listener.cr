@@ -16,7 +16,7 @@ require "../shared/*"
 #
 # --------------------------------------
 class EncryptedTcp::TcpListener
-  TOTAL_FIBERS = 5000
+  TOTAL_FIBERS = (ENV["TOTAL_FIBERS"]? || "5000").to_i
 
   def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String))
     @connections = 0
@@ -28,8 +28,8 @@ class EncryptedTcp::TcpListener
     client_public_key = config["client_public_key"]
     @encryptor = EncryptedTcp::Encryptor.new(server_secret_key, server_public_key, client_public_key)
     @debug = false
-    @debug_light = false
     @debug = ENV["DEBUG"]?.to_s == "true" if ENV["DEBUG"]?
+    @debug_light = false
     @debug_light = ENV["DEBUG_LIGHT"]?.to_s == "true" if ENV["DEBUG_LIGHT"]?
     set_trap
   end
@@ -65,14 +65,13 @@ class EncryptedTcp::TcpListener
             socket.flush_on_newline = true
             socket.sync = true
             socket.read_timeout = 20
-            socket.tcp_nodelay = true
             socket.linger = 0
-            socket.set
+            socket.tcp_nodelay = true
             @connections += 1
             reader(socket)
             @total_invokations += 1
+            puts "C = #{@connections}" if @debug_light
             @connections -= 1
-            puts "Xit C=#{@connections}" if @debug_light
           rescue ex
             if socket
               socket.close
@@ -90,9 +89,11 @@ class EncryptedTcp::TcpListener
 
   def get_socket_data(socket : TCPSocket)
     begin
-      line = socket.gets(true)
-      puts line.to_s if @debug
-      yield(line)
+      socket.each_line do |line|
+        puts line.to_s if @debug
+        yield(line)
+        Fiber.yield
+      end
     rescue ex
       if @debug
         puts "From Socket Address:" + socket.remote_address.to_s if socket.remote_address
