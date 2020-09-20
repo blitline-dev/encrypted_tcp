@@ -28,7 +28,9 @@ class EncryptedTcp::TcpListener
     client_public_key = config["client_public_key"]
     @encryptor = EncryptedTcp::Encryptor.new(server_secret_key, server_public_key, client_public_key)
     @debug = false
+    @debug_light = false
     @debug = ENV["DEBUG"]?.to_s == "true" if ENV["DEBUG"]?
+    @debug_light = ENV["DEBUG_LIGHT"]?.to_s == "true" if ENV["DEBUG_LIGHT"]?
     set_trap
   end
 
@@ -65,9 +67,9 @@ class EncryptedTcp::TcpListener
             socket.read_timeout = 20
             @connections += 1
             reader(socket)
-            socket.close
             @total_invokations += 1
             @connections -= 1
+            puts "Xit C=#{@connections}" if @debug_light
           rescue ex
             if socket
               socket.close
@@ -85,8 +87,12 @@ class EncryptedTcp::TcpListener
 
   def get_socket_data(socket : TCPSocket)
     begin
+      i = 0
       socket.each_line do |line|
+        i += 1
+        i = 0 if i > 900000
         puts line.to_s if @debug
+        puts "i = #{i}" if @debug_light && i % 10 == 0
         yield(line)
       end
     rescue ex
