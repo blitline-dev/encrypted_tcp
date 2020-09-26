@@ -8,11 +8,19 @@ class EncryptedTcp::EncryptionException < Exception
 end
 
 class EncryptedTcp::Connection
-  ETCP_HEARTBEAT = (ENV["ETCP_HEARTBEAT"]? || "15").to_i
+  ETCP_HEARTBEAT            = (ENV["ETCP_HEARTBEAT"]? || "15").to_i
+  LOCAL_TCP_KEEPAPLIVE      = (ENV["TCP_KEEPALIVE"]? || "300").to_i
+  LOCAL_TCP_NODELAY         = ENV["TCP_NODELAY"]? || "true"
+  LOCAL_TCP_IDLE            = (ENV["TCP_KEEPALIVE_IDLE"]? || "10").to_i
+  LOCAL_TCP_KEEPALIVE_COUNT = (ENV["TCP_KEEPALIVE_COUNT"]? || "10").to_i
 
   def initialize(@host : String, @port : String, client_secret_key : String, client_public_key : String, server_public_key : String)
     @debug = false
     @client = TCPSocket.new(@host, @port.to_i)
+    @client.tcp_keepalive_interval = LOCAL_TCP_KEEPAPLIVE
+    @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
+    @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
+    @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
     start_heartbeat
     @debug = ENV["DEBUG"]?.to_s == "true"
