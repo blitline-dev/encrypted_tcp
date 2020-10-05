@@ -13,17 +13,41 @@ class EncryptedTcp::Connection
   LOCAL_TCP_NODELAY         = ENV["TCP_NODELAY"]? || "true"
   LOCAL_TCP_IDLE            = (ENV["TCP_KEEPALIVE_IDLE"]? || "10").to_i
   LOCAL_TCP_KEEPALIVE_COUNT = (ENV["TCP_KEEPALIVE_COUNT"]? || "10").to_i
+  DEBUG_WATCHFILE           = ENV["DEBUG_WATCHFILE"]? || "/tmp/debug"
 
   def initialize(@host : String, @port : String, client_secret_key : String, client_public_key : String, server_public_key : String)
     @debug = false
-    @client = TCPSocket.new(@host, @port.to_i)
+    @client = TCPSocket.new(@host, @port.to_i, 20, 20)
     @client.tcp_keepalive_interval = LOCAL_TCP_KEEPAPLIVE
     @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
     @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
     @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
+    @client.flush_on_newline = true
+    @client.sync = true
+    @client.tcp_nodelay = true
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
     start_heartbeat
     @debug = ENV["DEBUG"]?.to_s == "true"
+    @debug_watchfile = false
+    spawn_debug_watcher
+  end
+
+  def spawn_debug_watcher
+    spawn do
+      loop do
+        if File.exists?(DEBUG_WATCHFILE)
+          puts "DEBUG FILE FOUND #{DEBUG_WATCHFILE}"
+          @debug = true
+          @debug_watchfile = true
+        else
+          if @debug_watchfile
+            @debug_watchfile = false
+            @debug = false
+          end
+        end
+        sleep 30
+      end
+    end
   end
 
   def mutex : Mutex
@@ -47,9 +71,14 @@ class EncryptedTcp::Connection
 
   def build_tcp_connection
     @client.close
-    @client = TCPSocket.new(@host, @port.to_i)
+    @client = TCPSocket.new(@host, @port.to_i, 20, 20)
+    @client.tcp_keepalive_interval = LOCAL_TCP_KEEPAPLIVE
+    @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
+    @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
+    @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
     @client.flush_on_newline = true
     @client.sync = true
+    @client.tcp_nodelay = true
     sleep 1
   end
 
