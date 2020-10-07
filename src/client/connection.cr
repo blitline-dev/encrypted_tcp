@@ -25,6 +25,7 @@ class EncryptedTcp::Connection
     @client.flush_on_newline = true
     @client.sync = true
     @client.tcp_nodelay = true
+    @client.read_timeout = 60
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
     start_heartbeat
     @debug = ENV["DEBUG"]?.to_s == "true"
@@ -48,11 +49,6 @@ class EncryptedTcp::Connection
         sleep 30
       end
     end
-  end
-
-  def mutex : Mutex
-    @mutex = Mutex.new unless @mutex
-    return @mutex.not_nil!
   end
 
   def start_heartbeat
@@ -79,6 +75,7 @@ class EncryptedTcp::Connection
     @client.flush_on_newline = true
     @client.sync = true
     @client.tcp_nodelay = true
+    @client.read_timeout = 60
     sleep 1
   end
 
@@ -170,11 +167,9 @@ class EncryptedTcp::Connection
     sent = false
     begin
       response = ""
-      mutex.synchronize do
-        @client.puts send_data
-        sent = true
-        response = @client.gets
-      end
+      @client.puts send_data
+      sent = true
+      response = @client.gets
       response
     rescue ex
       puts sent ? "Getting Response Failed" : "Sending Failed"
