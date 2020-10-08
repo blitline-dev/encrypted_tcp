@@ -66,17 +66,28 @@ class EncryptedTcp::Connection
   end
 
   def build_tcp_connection
-    @client.close
-    @client = TCPSocket.new(@host, @port.to_i, 20, 20)
-    @client.tcp_keepalive_interval = LOCAL_TCP_KEEPAPLIVE
-    @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
-    @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
-    @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
-    @client.flush_on_newline = true
-    @client.sync = true
-    @client.tcp_nodelay = true
-    @client.read_timeout = 60
-    sleep 1
+    begin
+      @client.close
+    rescue closex
+      puts "Exception closing TCPSocket. Handled"
+      puts closex.inspect_with_backtrace
+    end
+
+    begin
+      @client = TCPSocket.new(@host, @port.to_i, 20, 20)
+      @client.tcp_keepalive_interval = LOCAL_TCP_KEEPAPLIVE
+      @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
+      @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
+      @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
+      @client.flush_on_newline = true
+      @client.sync = true
+      @client.tcp_nodelay = true
+      @client.read_timeout = 60
+      sleep 1
+    rescue createx
+      puts "Exception creating TCPSocket. Handled"
+      puts createx.inspect_with_backtrace
+    end
   end
 
   def close
