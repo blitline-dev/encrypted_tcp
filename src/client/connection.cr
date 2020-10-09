@@ -9,7 +9,7 @@ end
 
 class EncryptedTcp::Connection
   ETCP_HEARTBEAT            = (ENV["ETCP_HEARTBEAT"]? || "15").to_i
-  LOCAL_TCP_KEEPAPLIVE      = (ENV["TCP_KEEPALIVE"]? || "300").to_i
+  LOCAL_TCP_KEEPALIVE       = (ENV["TCP_KEEPALIVE"]? || "100").to_i
   LOCAL_TCP_NODELAY         = ENV["TCP_NODELAY"]? || "true"
   LOCAL_TCP_IDLE            = (ENV["TCP_KEEPALIVE_IDLE"]? || "10").to_i
   LOCAL_TCP_KEEPALIVE_COUNT = (ENV["TCP_KEEPALIVE_COUNT"]? || "10").to_i
@@ -18,14 +18,14 @@ class EncryptedTcp::Connection
   def initialize(@host : String, @port : String, client_secret_key : String, client_public_key : String, server_public_key : String)
     @debug = false
     @client = TCPSocket.new(@host, @port.to_i, 20, 20)
-    @client.tcp_keepalive_interval = LOCAL_TCP_KEEPAPLIVE
+    @client.tcp_keepalive_interval = LOCAL_TCP_KEEPALIVE
     @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
     @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
     @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
     @client.flush_on_newline = true
     @client.sync = true
     @client.tcp_nodelay = true
-    @client.read_timeout = 60
+    @client.read_timeout = 30
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
     start_heartbeat
     @debug = ENV["DEBUG"]?.to_s == "true"
@@ -72,19 +72,23 @@ class EncryptedTcp::Connection
       puts "Exception closing TCPSocket. Handled"
       puts closex.inspect_with_backtrace
     end
+    sleep(5)
 
     begin
       @client = TCPSocket.new(@host, @port.to_i, 20, 20)
-      @client.tcp_keepalive_interval = LOCAL_TCP_KEEPAPLIVE
+      @client.tcp_keepalive_interval = LOCAL_TCP_KEEPALIVE
       @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
       @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
       @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
       @client.flush_on_newline = true
       @client.sync = true
       @client.tcp_nodelay = true
-      @client.read_timeout = 60
+      @client.read_timeout = 30
       sleep 1
     rescue createx
+      if @client
+        @client.close
+      end
       puts "Exception creating TCPSocket. Handled"
       puts createx.inspect_with_backtrace
     end
@@ -95,8 +99,8 @@ class EncryptedTcp::Connection
   end
 
   def retry(encrypted_data)
-    1.upto(5) do
-      sleep(1)
+    1.upto(5) do |x|
+      sleep(x * 5)
       if once_alive?
         response = raw_send(encrypted_data)
         response_data = @encryptor.decrypt(response)
@@ -114,6 +118,11 @@ class EncryptedTcp::Connection
     raise EncryptedTcp::ConnectionException.new("Couldn't send data to server. No Connection")
   end
 
+  def mutex : Mutex
+    @mutex = Mutex.new unless @mutex
+    return @mutex.not_nil!
+  end
+
   def alive?
     begin
       if @client.closed?
@@ -121,7 +130,7 @@ class EncryptedTcp::Connection
       end
       return ping?
     rescue ex
-      sleep(1)
+      sleep(5)
       return true if once_alive?
       puts ex.inspect_with_backtrace if @debug
     end
@@ -178,9 +187,11 @@ class EncryptedTcp::Connection
     sent = false
     begin
       response = ""
-      @client.puts send_data
-      sent = true
-      response = @client.gets
+      mutex.synchronize do
+        @client.puts send_data
+        sent = true
+        response = @client.gets
+      end
       response
     rescue ex
       puts sent ? "Getting Response Failed" : "Sending Failed"

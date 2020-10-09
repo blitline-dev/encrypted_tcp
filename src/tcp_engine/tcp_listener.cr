@@ -16,7 +16,7 @@ require "../shared/*"
 #
 # --------------------------------------
 class EncryptedTcp::TcpListener
-  TOTAL_FIBERS = (ENV["TOTAL_FIBERS"]? || "5000").to_i
+  TOTAL_FIBERS = (ENV["TOTAL_FIBERS"]? || "10000").to_i
 
   def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String))
     @connections = 0
@@ -45,8 +45,10 @@ class EncryptedTcp::TcpListener
     spawn_listener(ch)
     begin
       loop do
-        socket = server.accept
-        ch.send socket
+        if socket = server.accept?
+          ch.send socket
+        end
+        Fiber.yield
       end
     rescue ex
       if @debug
@@ -61,11 +63,11 @@ class EncryptedTcp::TcpListener
       spawn do
         loop do
           begin
-            socket = socket_channel.receive
+            socket = socket_channel.receive # Get object from Channel
             socket.flush_on_newline = true
             socket.sync = true
-            socket.read_timeout = 20
-            socket.linger = 0
+            socket.read_timeout = 10
+            socket.linger = 10
             socket.tcp_nodelay = true
             @connections += 1
             reader(socket)
