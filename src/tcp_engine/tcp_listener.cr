@@ -16,7 +16,7 @@ require "../shared/*"
 #
 # --------------------------------------
 class EncryptedTcp::TcpListener
-  TOTAL_FIBERS = (ENV["TOTAL_FIBERS"]? || "10000").to_i
+  TOTAL_FIBERS = (ENV["TOTAL_FIBERS"]? || "5000").to_i
 
   def initialize(@host : String, @port : Int32, @action : ActionHandler, @config : Hash(String, String))
     @connections = 0
