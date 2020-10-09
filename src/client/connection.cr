@@ -17,6 +17,7 @@ class EncryptedTcp::Connection
 
   def initialize(@host : String, @port : String, client_secret_key : String, client_public_key : String, server_public_key : String)
     @debug = false
+    @exit = false
     @client = TCPSocket.new(@host, @port.to_i, 20, 20)
     @client.tcp_keepalive_interval = LOCAL_TCP_KEEPALIVE
     @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
@@ -36,7 +37,7 @@ class EncryptedTcp::Connection
 
   def spawn_debug_watcher
     spawn do
-      loop do
+      while !@exit
         if File.exists?(DEBUG_WATCHFILE)
           puts "DEBUG FILE FOUND #{DEBUG_WATCHFILE}"
           @debug = true
@@ -54,7 +55,7 @@ class EncryptedTcp::Connection
 
   def start_heartbeat
     spawn do
-      loop do
+      while !@exit
         begin
           sleep ETCP_HEARTBEAT
           alive?
@@ -104,6 +105,7 @@ class EncryptedTcp::Connection
   end
 
   def close
+    @exit = true
     @client.close
   end
 
