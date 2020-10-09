@@ -26,6 +26,7 @@ class EncryptedTcp::Connection
     @client.sync = true
     @client.tcp_nodelay = true
     @client.read_timeout = 30
+    @client.linger = 0
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
     start_heartbeat
     @debug = ENV["DEBUG"]?.to_s == "true"
@@ -84,6 +85,7 @@ class EncryptedTcp::Connection
       @client.sync = true
       @client.tcp_nodelay = true
       @client.read_timeout = 30
+      @client.linger = 0
       sleep 1
     rescue createx
       if @client
@@ -96,26 +98,6 @@ class EncryptedTcp::Connection
 
   def close
     @client.close
-  end
-
-  def retry(encrypted_data)
-    1.upto(5) do |x|
-      sleep(x * 5)
-      if once_alive?
-        response = raw_send(encrypted_data)
-        response_data = @encryptor.decrypt(response)
-        if response_data && !response_data.empty?
-          return response_data
-        else
-          build_tcp_connection
-        end
-      else
-        build_tcp_connection
-      end
-      puts "Retrying"
-    end
-    puts "Retries Failed"
-    raise EncryptedTcp::ConnectionException.new("Couldn't send data to server. No Connection")
   end
 
   def mutex : Mutex
@@ -169,15 +151,15 @@ class EncryptedTcp::Connection
       response_data = @encryptor.decrypt(response)
       if response_data.nil? || response_data.empty?
         puts "Empty response?! Weird:"
-        response_data = retry(send_data)
+        raise "Empty response?! Weird:"
       end
       return response_data
     rescue ce : EncryptedTcp::ConnectionException
       puts "Excryption Exception with data #{data}"
-      response_data = retry(send_data)
+      raise ce
     rescue ex : Exception
       puts "Regular Exception with data #{data}"
-      response_data = retry(send_data)
+      raise ex
     end
 
     response_data

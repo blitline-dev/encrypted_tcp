@@ -67,13 +67,14 @@ class EncryptedTcp::TcpListener
             socket.flush_on_newline = true
             socket.sync = true
             socket.read_timeout = 10
-            socket.linger = 10
+            socket.linger = 0
             socket.tcp_nodelay = true
             @connections += 1
             reader(socket)
             @total_invokations += 1
             puts "C = #{@connections}" if @debug_light
             @connections -= 1
+            socket.close
           rescue ex
             if socket
               socket.close
