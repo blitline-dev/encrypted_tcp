@@ -34,38 +34,6 @@ class EncryptedTcp::Connection
     spawn_debug_watcher
   end
 
-  def spawn_debug_watcher
-    spawn do
-      while !@exit
-        if File.exists?(DEBUG_WATCHFILE)
-          puts "DEBUG FILE FOUND #{DEBUG_WATCHFILE}"
-          @debug = true
-          @debug_watchfile = true
-        else
-          if @debug_watchfile
-            @debug_watchfile = false
-            @debug = false
-          end
-        end
-        sleep 30
-      end
-    end
-  end
-
-  def start_heartbeat
-    spawn do
-      while !@exit
-        begin
-          sleep ETCP_HEARTBEAT
-          alive?
-        rescue ex
-          puts "Exception in heartbeat" if @debug
-          puts ex.inspect_with_backtrace
-        end
-      end
-    end
-  end
-
   def mutex : Mutex
     @mutex = Mutex.new unless @mutex
     return @mutex.not_nil!
@@ -78,27 +46,24 @@ class EncryptedTcp::Connection
       puts "Exception closing TCPSocket. Handled"
       puts closex.inspect_with_backtrace
     end
-    mutex.synchronize do
-      sleep(3)
 
-      begin
-        @client = TCPSocket.new(@host, @port.to_i, 20, 20)
-        @client.tcp_keepalive_interval = LOCAL_TCP_KEEPALIVE
-        @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
-        @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
-        @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
-        @client.flush_on_newline = true
-        @client.read_timeout = 30
-        @client.sync = true
-        @client.tcp_nodelay = true
-        sleep 1
-      rescue createx
-        if @client
-          @client.close
-        end
-        puts "Exception creating TCPSocket. Handled"
-        puts createx.inspect_with_backtrace
+    begin
+      @client = TCPSocket.new(@host, @port.to_i, 20, 20)
+      @client.tcp_keepalive_interval = LOCAL_TCP_KEEPALIVE
+      @client.tcp_nodelay = (LOCAL_TCP_NODELAY == "true")
+      @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
+      @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
+      @client.flush_on_newline = true
+      @client.read_timeout = 30
+      @client.sync = true
+      @client.tcp_nodelay = true
+      sleep 1
+    rescue createx
+      if @client
+        @client.close
       end
+      puts "Exception creating TCPSocket. Handled"
+      puts createx.inspect_with_backtrace
     end
   end
 

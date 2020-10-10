@@ -13,11 +13,6 @@ abstract class EncryptedTcp::ActionHandler
   def initialize
   end
 
-  def mutex : Mutex
-    @mutex = Mutex.new unless @mutex
-    return @mutex.not_nil!
-  end
-
   # For example purposes, just output data
   def process(socket : Socket, encryptor : EncryptedTcp::Encryptor, data : String)
     received_data = encryptor.decrypt(data)
@@ -40,9 +35,7 @@ abstract class EncryptedTcp::ActionHandler
 
   def locked_puts(socket, data)
     output = ""
-    mutex.synchronize do
-      output = socket.puts(data.to_s)
-    end
+    output = socket.puts(data.to_s)
     output
   end
 
