@@ -24,10 +24,7 @@ class EncryptedTcp::Connection
     @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
     @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
     @client.flush_on_newline = true
-    @client.sync = true
-    @client.tcp_nodelay = true
     @client.read_timeout = 30
-    @client.linger = 0
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
     start_heartbeat
     @debug = ENV["DEBUG"]?.to_s == "true"
@@ -89,10 +86,7 @@ class EncryptedTcp::Connection
         @client.tcp_keepalive_idle = LOCAL_TCP_IDLE
         @client.tcp_keepalive_count = LOCAL_TCP_KEEPALIVE_COUNT
         @client.flush_on_newline = true
-        @client.sync = true
-        @client.tcp_nodelay = true
         @client.read_timeout = 30
-        @client.linger = 0
         sleep 1
       rescue createx
         if @client
