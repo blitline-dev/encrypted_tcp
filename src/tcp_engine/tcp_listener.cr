@@ -66,7 +66,7 @@ class EncryptedTcp::TcpListener
             socket = socket_channel.receive # Get object from Channel
             socket.flush_on_newline = true
             socket.sync = true
-            socket.read_timeout = 10
+            socket.read_timeout = 60
             socket.linger = 0
             socket.tcp_nodelay = true
             @connections += 1
@@ -74,7 +74,7 @@ class EncryptedTcp::TcpListener
             @total_invokations += 1
             puts "C = #{@connections}" if @debug_light
             @connections -= 1
-            socket.close
+            #            socket.close
           rescue ex
             if socket
               socket.close
