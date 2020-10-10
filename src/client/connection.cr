@@ -28,10 +28,8 @@ class EncryptedTcp::Connection
     @client.tcp_nodelay = true
     @client.read_timeout = 30
     @encryptor = EncryptedTcp::Encryptor.new(client_secret_key, client_public_key, server_public_key)
-    start_heartbeat
     @debug = ENV["DEBUG"]?.to_s == "true"
     @debug_watchfile = false
-    spawn_debug_watcher
   end
 
   def mutex : Mutex

@@ -6,5 +6,5 @@ require "base64"
 require "benchmark"
 
 module EncryptedTcp
-  VERSION = "0.1.61"
+  VERSION = "0.1.62"
 end
